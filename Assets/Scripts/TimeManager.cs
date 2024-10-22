@@ -11,6 +11,7 @@ public class TimeManager : MonoBehaviour
     private float timeRemaining = 30f; // 초기 시간 30초
     private bool timerRunning = false;
     public bool bonusTimeActive = false; // 보너스 시간이 활성화되었는지 확인
+    private bool gameEnded = false; // 게임 종료 여부 확인
 
     private void Start()
     {
@@ -52,18 +53,27 @@ public class TimeManager : MonoBehaviour
 
             // 노란색으로 변경하고 x2 표시
             timerText.color = Color.yellow;
-            timerText.text = "Time: " + Mathf.Ceil(timeRemaining).ToString() + " (x2 점수)";
+            timerText.text = "Time: " + Mathf.Ceil(timeRemaining).ToString() + " (x2 Score)";
 
             Debug.Log("보너스 시간이 시작되었습니다! 현재 점수: " + basketballHoop.score);
         }
         else
         {
             Debug.Log("점수: " + basketballHoop.score + ". 추가 시간이 없습니다.");
+            gameEnded = true; // 게임 종료 상태로 설정
+            StartCoroutine(ResetScoreAfterDelay(3f)); // 3초 후 점수 초기화
         }
 
         // 남은 시간이 0이 되었으므로, 타이머를 멈춤
         timerRunning = false;
         UpdateTimerText(); // 최종 남은 시간 업데이트
+    }
+
+    private IEnumerator ResetScoreAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay); // 3초 대기
+        basketballHoop.score = 0; // 점수 초기화
+        Debug.Log("점수가 초기화되었습니다.");
     }
 
     private void Update()
@@ -78,10 +88,18 @@ public class TimeManager : MonoBehaviour
             {
                 bonusTimeActive = false;
                 timerRunning = false; // 타이머 멈춤
-                timerText.text = "보너스 시간이 종료되었습니다!"; // 보너스 시간 종료 메시지
+
+                // 보너스 시간이 끝난 후 점수 초기화하는 코루틴 시작
+                StartCoroutine(ResetScoreAfterDelay(3f));
+                return;
             }
 
             UpdateTimerText(); // 타이머 텍스트 업데이트
+        }
+        else if (!timerRunning && timeRemaining <= 0 && !gameEnded)
+        {
+            gameEnded = true; // 게임 종료 상태로 설정
+            StartCoroutine(ResetScoreAfterDelay(3f));
         }
     }
 }
